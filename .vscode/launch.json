@@ -1,0 +1,26 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "1.0.0",
+  "configurations": [
+      {
+          "name": "[Swift]Debug ANTLR4 grammar", // 任意の名前
+          "type": "antlr-debug",          // 決め打ち(多分)
+          "request": "launch",            // 決め打ち(多分)
+          "input": "SwiftInput.swift",           // 入力となるテキストを記述したファイル
+          "grammar": "SwiftParser.g4",      // 使用するグラマーファイル
+          "printParseTree": true,         // デバッグ結果をデバッグコンソールに表示するか
+          "visualParseTree": true         // デバッグ結果をグラフィカルなツリーで表示するか
+      },
+      {
+          "name": "[Cadence]Debug ANTLR4 grammar", // 任意の名前
+          "type": "antlr-debug",          // 決め打ち(多分)
+          "request": "launch",            // 決め打ち(多分)
+          "input": "input.cdc",           // 入力となるテキストを記述したファイル
+          "grammar": "CadenceParser.g4",      // 使用するグラマーファイル
+          "printParseTree": true,         // デバッグ結果をデバッグコンソールに表示するか
+          "visualParseTree": true         // デバッグ結果をグラフィカルなツリーで表示するか
+      },
+    ]
+}
