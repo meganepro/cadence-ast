@@ -6,26 +6,6 @@ options {
 
 top_level: statements? EOF;
 
-// Statements
-statement:
-	(
-		loop_statement
-		| declaration
-		| branch_statement
-		| labeled_statement
-		| control_transfer_statement
-		| defer_statement
-		| do_statement
-		| expression
-	) SEMI?
-	| compiler_control_statement;
-
-statements
-	locals[int indexBefore = -1]: (
-		{SwiftSupport.isSeparatedStatement(_input, $indexBefore)}? statement {$indexBefore = _input.index();
-			}
-	)+;
-
 // Loop Statements
 loop_statement:
 	for_in_statement
@@ -42,8 +22,7 @@ while_statement: WHILE condition_list code_block;
 condition_list: condition (COMMA condition)*;
 
 condition:
-	availability_condition
-	| expression
+  expression
 	| case_condition
 	| optional_binding_condition;
 
@@ -70,24 +49,13 @@ guard_statement: GUARD condition_list ELSE code_block;
 // Switch Statement
 switch_statement: SWITCH expression LCURLY switch_cases? RCURLY;
 switch_cases: switch_case switch_cases?;
-switch_case: (case_label | default_label) statements
-	| conditional_switch_case;
-case_label: attributes? CASE case_item_list COLON;
+switch_case: (case_label | default_label) statements;
+case_label: CASE case_item_list COLON;
 case_item_list:
 	pattern where_clause? (COMMA pattern where_clause?)*;
-default_label: attributes? DEFAULT COLON;
+default_label: DEFAULT COLON;
 where_clause: WHERE where_expression;
 where_expression: expression;
-conditional_switch_case:
-	switch_if_directive_clause switch_elseif_directive_clauses? switch_else_directive_clause?
-		HASH_ENDIF;
-switch_if_directive_clause:
-	HASH_IF compilation_condition switch_cases?;
-switch_elseif_directive_clauses:
-	elseif_directive_clause switch_elseif_directive_clauses?;
-switch_elseif_directive_clause:
-	HASH_ELSEIF compilation_condition switch_cases?;
-switch_else_directive_clause: HASH_ELSE switch_cases?;
 
 // Labeled Statement
 labeled_statement:
@@ -124,9 +92,6 @@ return_statement: RETURN expression?;
 // Throw Statement
 throw_statement: THROW expression;
 
-// Defer Statement
-defer_statement: DEFER code_block;
-
 // Do Statement
 do_statement: DO code_block catch_clauses?;
 catch_clauses: catch_clause+;
@@ -134,58 +99,6 @@ catch_clause: CATCH catch_pattern_list? code_block;
 catch_pattern_list:
 	catch_pattern (catch_pattern COMMA catch_pattern)*;
 catch_pattern: pattern where_clause?;
-
-// Compiler Control Statements
-compiler_control_statement:
-	conditional_compilation_block
-	| line_control_statement
-	| diagnostic_statement;
-
-// Conditional Compilation Block
-conditional_compilation_block:
-	if_directive_clause elseif_directive_clauses? else_directive_clause? HASH_ENDIF;
-
-if_directive_clause: HASH_IF compilation_condition statements?;
-
-elseif_directive_clauses: elseif_directive_clause+;
-elseif_directive_clause:
-	HASH_ELSEIF compilation_condition statements?;
-else_directive_clause: HASH_ELSE statements?;
-
-compilation_condition:
-	platform_condition
-	| identifier
-	| boolean_literal
-	| LPAREN compilation_condition RPAREN
-	| BANG compilation_condition
-	| compilation_condition (
-		compilation_condition_AND
-		| compilation_condition_OR
-	) compilation_condition;
-
-platform_condition:
-	OS LPAREN operating_system RPAREN
-	| ARCH LPAREN architecture RPAREN
-	| (SWIFT | COMPILER) LPAREN (
-		compilation_condition_GE
-		| compilation_condition_L
-	) swift_version RPAREN
-	| CAN_IMPORT LPAREN module_name RPAREN
-	| TARGET_ENVIRONMENT LPAREN environment RPAREN;
-
-swift_version: Decimal_digits swift_version_continuation?;
-swift_version_continuation:
-	DOT Decimal_digits swift_version_continuation?;
-
-operating_system:
-	MAC_OS
-	| I_OS
-	| OSX
-	| WATCH_OS
-	| TV_OS
-	| LINUX
-	| WINDOWS;
-architecture: I386 | X86_64 | ARM | ARM64;
 
 module_name: identifier (DOT identifier)*;
 environment: SIMULATOR | MAC_CATALYST;
@@ -205,41 +118,11 @@ diagnostic_statement: (ERROR | WARNING) LPAREN diagnostic_message RPAREN;
 
 diagnostic_message: static_string_literal;
 
-// Availability Condition
-availability_condition:
-	AVAILABLE LPAREN availability_arguments RPAREN;
-
-availability_arguments:
-	availability_argument (COMMA availability_argument)*;
-
-availability_argument: platform_name platform_version | MUL;
-
-platform_name:
-	I_OS
-	| OSX
-	| I_OS_APPLICATION_EXTENSION
-	| MAC_OS
-	| MAC_OS_APPLICATION_EXTENSION
-	| MAC_CATALYST
-	| MAC_CATALYST_APPLICATION_EXTENSION
-	| WATCH_OS
-	| TV_OS;
-
 platform_version:
 	Decimal_literal
 	| Decimal_digits
 	| Floating_point_literal (DOT Decimal_digits)?;
 
-// Generic Parameter Clause
-generic_parameter_clause: LT generic_parameter_list GT;
-generic_parameter_list:
-	generic_parameter (COMMA generic_parameter)*;
-generic_parameter:
-	type_name (
-		COLON (type_identifier | protocol_composition_type)
-	)?;
-
-generic_where_clause: WHERE requirement_list;
 requirement_list: requirement (COMMA requirement)*;
 requirement: conformance_requirement | same_type_requirement;
 
@@ -257,6 +140,12 @@ generic_argument_list:
 	generic_argument (COMMA generic_argument)*;
 generic_argument: type;
 
+// SCOPE
+access_level_modifier:
+	(ACCESS | PRIVATE | FILE_PRIVATE | INTERNAL | PUBLIC | OPEN) (
+		LPAREN SET RPAREN
+	)?;
+
 // Declarations
 declaration:
 	(
@@ -264,6 +153,7 @@ declaration:
 		| constant_declaration
 		| variable_declaration
 		| typealias_declaration
+		| contract_declaration
 		| function_declaration
 		| enum_declaration
 		| struct_declaration
@@ -279,6 +169,21 @@ declaration:
 
 declarations: declaration+;
 
+// Contract Declaratioin
+contract_declaration:
+	access_level_modifier CONTRACT identifier code_block;
+
+// Function Declaration
+function_declaration:
+	function_head function_name generic_parameter_clause? function_signature
+		function_body?;
+function_head: declaration_modifiers? FUNC;
+function_name: identifier | operator;
+function_signature:
+	parameter_clause (THROWS? | RETHROWS) function_result?;
+function_result: type_annotation;
+function_body: code_block;
+
 // Top-Level Code
 top_level_declaration: statements?;
 
@@ -286,7 +191,7 @@ top_level_declaration: statements?;
 code_block: LCURLY statements? RCURLY;
 
 // Import Declaration
-import_declaration: attributes? IMPORT import_kind? import_path;
+import_declaration: IMPORT import_kind? import_path;
 import_kind:
 	TYPEALIAS
 	| STRUCT
@@ -302,29 +207,80 @@ import_path_identifier: identifier | operator;
 
 // Constant Declaration
 constant_declaration:
-	attributes? declaration_modifiers? LET pattern_initializer_list;
+	declaration_modifiers? LET pattern_initializer_list;
 pattern_initializer_list:
 	pattern_initializer (COMMA pattern_initializer)*;
 pattern_initializer: pattern initializer?;
 initializer: EQUAL expression;
 
+// Variables
+variable_name: identifier;
 // Variable Declaration
 variable_declaration:
 	variable_declaration_head (
-		variable_name (
-			initializer willSet_didSet_block
-			| type_annotation (
-			    initializer? willSet_didSet_block
-				| getter_setter_block // contains code_block
-				| getter_setter_keyword_block
-			)
-		)
-		| pattern_initializer_list
+		variable_name (COLON type)?
 	);
+variable_declaration_head: access_level_modifier ( LET | VAR );
+// Variable
+variable: (resource_variable | local_variable);
+resource_variable: self_expression;
+local_variable: variable_name;
 
-variable_declaration_head:
-	attributes? declaration_modifiers? VAR;
-variable_name: identifier;
+// Initializer Declaration
+initializer_declaration:
+	initializer_head generic_parameter_clause? parameter_clause (
+		THROWS
+		| RETHROWS
+	)? initializer_body;
+initializer_head: INIT;
+initializer_body: code_block;
+
+// Generic Parameter Clause
+generic_parameter_clause: LT generic_parameter_list GT;
+generic_parameter_list: generic_parameter (COMMA generic_parameter)*;
+generic_parameter: type_name ( COLON type )?;
+// Parameter Clause
+parameter_clause: LPAREN parameter_list? RPAREN;
+parameter_list: parameter (COMMA parameter)*;
+parameter: type_name ( COLON type )?;
+
+// Statements
+statement:
+	(
+		loop_statement
+		| declaration
+		| assignment_statement
+		| branch_statement
+		| labeled_statement
+		| control_transfer_statement
+		| do_statement
+		| expression
+	) SEMI?;
+statements: statement+;
+assignment_statement: 
+	(variable | variable_declaration)
+	assignment_operator
+	(variable | literal_expression);
+
+// operator
+assignment_operator: (EQUAL | MOVE | FORCE_MOVE | SWAP);
+
+// Literal Expression
+literal_expression:
+	literal
+	| array_literal
+	| dictionary_literal;
+// Array Literal
+array_literal: LBRACK array_literal_items? RBRACK;
+array_literal_items:
+	array_literal_item (COMMA array_literal_item)* COMMA?;
+array_literal_item: expression;
+// Dictinary Literal
+dictionary_literal:
+	LBRACK (dictionary_literal_items | COLON) RBRACK;
+dictionary_literal_items:
+	dictionary_literal_item (COMMA dictionary_literal_item)* COMMA?;
+dictionary_literal_item: expression COLON expression;
 
 getter_setter_block:
 	LCURLY (
@@ -332,9 +288,9 @@ getter_setter_block:
 		| setter_clause getter_clause
 	) RCURLY
 	| code_block;
-getter_clause: attributes? mutation_modifier? GET code_block?;
+getter_clause: mutation_modifier? GET code_block?;
 setter_clause:
-	attributes? mutation_modifier? SET setter_name? code_block?;
+	mutation_modifier? SET setter_name? code_block?;
 setter_name: LPAREN identifier RPAREN;
 
 getter_setter_keyword_block:
@@ -342,72 +298,43 @@ getter_setter_keyword_block:
 		getter_keyword_clause setter_keyword_clause?
 		| setter_keyword_clause getter_keyword_clause
 	) RCURLY;
-getter_keyword_clause: attributes? mutation_modifier? GET;
-setter_keyword_clause: attributes? mutation_modifier? SET;
+getter_keyword_clause: mutation_modifier? GET;
+setter_keyword_clause: mutation_modifier? SET;
 
 willSet_didSet_block:
 	LCURLY (
 		willSet_clause didSet_clause?
 		| didSet_clause willSet_clause?
 	) RCURLY;
-willSet_clause: attributes? WILL_SET setter_name? code_block;
-didSet_clause: attributes? DID_SET setter_name? code_block;
+willSet_clause: WILL_SET setter_name? code_block;
+didSet_clause: DID_SET setter_name? code_block;
 
 // Type Alias Declaration
 typealias_declaration:
-	attributes? access_level_modifier? TYPEALIAS typealias_name generic_parameter_clause?
+	access_level_modifier? TYPEALIAS typealias_name generic_parameter_clause?
 		typealias_assignment;
 typealias_name: identifier;
 typealias_assignment: EQUAL type;
 
-// Function Declaration
-function_declaration:
-	function_head function_name generic_parameter_clause? function_signature generic_where_clause?
-		function_body?;
-
-function_head: attributes? declaration_modifiers? FUNC;
-
-function_name: identifier | operator;
-
-function_signature:
-	parameter_clause (THROWS? | RETHROWS) function_result?;
-
-function_result: arrow_operator attributes? type;
-
-function_body: code_block;
-
-parameter_clause: LPAREN parameter_list? RPAREN;
-parameter_list: parameter (COMMA parameter)*;
-
-parameter:
-	attributes? external_parameter_name? local_parameter_name type_annotation (
-		default_argument_clause?
-		| range_operator
-	);
-external_parameter_name: identifier;
-local_parameter_name: identifier;
-default_argument_clause: EQUAL expression;
-
 // Enumeration Declaration
 enum_declaration:
-	attributes? access_level_modifier? (
+	access_level_modifier? (
 		union_style_enum
 		| raw_value_style_enum
 	);
 
 union_style_enum:
-	INDIRECT? ENUM enum_name generic_parameter_clause? type_inheritance_clause? generic_where_clause
-		? LCURLY union_style_enum_members? RCURLY;
+	INDIRECT? ENUM enum_name generic_parameter_clause? type_inheritance_clause?
+		LCURLY union_style_enum_members? RCURLY;
 
 union_style_enum_members: union_style_enum_member+;
 
 union_style_enum_member:
 	declaration
-	| union_style_enum_case_clause
-	| compiler_control_statement;
+	| union_style_enum_case_clause;
 
 union_style_enum_case_clause:
-	attributes? INDIRECT? CASE union_style_enum_case_list;
+	INDIRECT? CASE union_style_enum_case_list;
 
 union_style_enum_case_list:
 	union_style_enum_case (COMMA union_style_enum_case)*;
@@ -421,18 +348,17 @@ enum_name: identifier;
 enum_case_name: identifier;
 
 raw_value_style_enum:
-	ENUM enum_name generic_parameter_clause? type_inheritance_clause generic_where_clause? LCURLY
+	ENUM enum_name generic_parameter_clause? type_inheritance_clause LCURLY
 		raw_value_style_enum_members RCURLY;
 
 raw_value_style_enum_members: raw_value_style_enum_member+;
 
 raw_value_style_enum_member:
 	declaration
-	| raw_value_style_enum_case_clause
-	| compiler_control_statement;
+	| raw_value_style_enum_case_clause;
 
 raw_value_style_enum_case_clause:
-	attributes? CASE raw_value_style_enum_case_list;
+	CASE raw_value_style_enum_case_list;
 
 raw_value_style_enum_case_list:
 	raw_value_style_enum_case (COMMA raw_value_style_enum_case)*;
@@ -448,38 +374,37 @@ raw_value_literal:
 
 // Structure Declaration
 struct_declaration:
-	attributes? access_level_modifier? STRUCT struct_name generic_parameter_clause?
-		type_inheritance_clause? generic_where_clause? struct_body;
+	access_level_modifier? STRUCT struct_name generic_parameter_clause?
+		type_inheritance_clause? struct_body;
 struct_name: identifier;
 struct_body: LCURLY struct_members RCURLY;
 struct_members: struct_member*;
-struct_member: declaration | compiler_control_statement;
+struct_member: declaration ;
 
 // Class Declaration
 class_declaration:
-	attributes? (
+	(
 		access_level_modifier? FINAL?
 		| FINAL access_level_modifier?
-	) CLASS class_name generic_parameter_clause? type_inheritance_clause? generic_where_clause?
+	) CLASS class_name generic_parameter_clause? type_inheritance_clause?
 		class_body;
 class_name: identifier;
 class_body: LCURLY class_members RCURLY;
 class_members: class_member*;
-class_member: declaration | compiler_control_statement;
+class_member: declaration ;
 
 // Protocol Declaration
 protocol_declaration:
-	attributes? access_level_modifier? PROTOCOL protocol_name (
+	access_level_modifier? PROTOCOL protocol_name (
 		COLON CLASS
 		| type_inheritance_clause
-	)? generic_where_clause? protocol_body;
+	)? protocol_body;
 protocol_name: identifier;
 protocol_body: LCURLY protocol_members RCURLY;
 protocol_members: protocol_member*;
 
 protocol_member:
-	protocol_member_declaration
-	| compiler_control_statement;
+	protocol_member_declaration;
 
 protocol_member_declaration:
 	protocol_property_declaration
@@ -495,58 +420,47 @@ protocol_property_declaration:
 
 // Protocol Method Declaration
 protocol_method_declaration:
-	function_head function_name generic_parameter_clause? function_signature generic_where_clause?;
+	function_head function_name generic_parameter_clause? function_signature;
 
 // Protocol Initializer Declaration
 protocol_initializer_declaration:
 	initializer_head generic_parameter_clause? parameter_clause (
 		THROWS?
 		| RETHROWS
-	) generic_where_clause?;
+	);
 
 // Protocol Subscript Declaration
 protocol_subscript_declaration:
-	subscript_head subscript_result generic_where_clause? getter_setter_keyword_block;
+	subscript_head subscript_result getter_setter_keyword_block;
 
 // Protocol Associated Type Declaration
 protocol_associated_type_declaration:
-	attributes? access_level_modifier? ASSOCIATED_TYPE typealias_name type_inheritance_clause?
-		typealias_assignment? generic_where_clause?;
+	access_level_modifier? ASSOCIATED_TYPE typealias_name type_inheritance_clause?
+		typealias_assignment?;
 
-// Initializer Declaration
-initializer_declaration:
-	initializer_head generic_parameter_clause? parameter_clause (
-		THROWS
-		| RETHROWS
-	)? generic_where_clause? initializer_body;
-
-initializer_head:
-	attributes? declaration_modifiers? INIT (QUESTION | BANG)?;
-
-initializer_body: code_block;
 
 // Deinitializer Declaration
-deinitializer_declaration: attributes? DEINIT code_block;
+deinitializer_declaration: DEINIT code_block;
 
 // Extension Declaration
 extension_declaration:
-	attributes? access_level_modifier? EXTENSION type_identifier type_inheritance_clause?
-		generic_where_clause? extension_body;
+	access_level_modifier? EXTENSION type_identifier type_inheritance_clause?
+	 extension_body;
 extension_body: LCURLY extension_members RCURLY;
 extension_members: extension_member*;
-extension_member: declaration | compiler_control_statement;
+extension_member: declaration ;
 
 // Subscript Declaration
 subscript_declaration:
-	subscript_head subscript_result generic_where_clause? (
+	subscript_head subscript_result (
 		code_block
 		| getter_setter_block
 		| getter_setter_keyword_block
 	);
 
 subscript_head:
-	attributes? declaration_modifiers? SUBSCRIPT generic_parameter_clause? parameter_clause;
-subscript_result: arrow_operator attributes? type;
+	declaration_modifiers? SUBSCRIPT generic_parameter_clause? parameter_clause;
+subscript_result: arrow_operator type;
 
 // Operator Declaration
 operator_declaration:
@@ -563,7 +477,7 @@ infix_operator_group: COLON precedence_group_name;
 
 // Precedence Group Declaration
 precedence_group_declaration:
-	PRECEDENCE_GROUP precedence_group_name LCURLY precedence_group_attributes? RCURLY;
+	PRECEDENCE_GROUP precedence_group_name LCURLY RCURLY;
 precedence_group_attributes: precedence_group_attribute+;
 
 precedence_group_attribute:
@@ -604,11 +518,6 @@ declaration_modifier:
 
 declaration_modifiers: declaration_modifier+;
 
-access_level_modifier:
-	(PRIVATE | FILE_PRIVATE | INTERNAL | PUBLIC | OPEN) (
-		LPAREN SET RPAREN
-	)?;
-
 mutation_modifier: MUTATING | NONMUTATING;
 
 // Patterns
@@ -648,11 +557,6 @@ optional_pattern: identifier_pattern QUESTION;
 // Expression Pattern
 expression_pattern: expression;
 
-// Attributes
-attribute: AT attribute_name attribute_argument_clause?;
-attribute_name: identifier (DOT identifier)*;
-attribute_argument_clause: LPAREN balanced_tokens? RPAREN;
-attributes: attribute+;
 balanced_tokens: balanced_token+;
 
 balanced_token:
@@ -683,16 +587,13 @@ balanced_token_punctuation:
 	| {SwiftSupport.isPostfixOp(_input)}? BANG;
 
 // Expressions
-expression: try_operator? prefix_expression binary_expressions?;
+expression: prefix_expression binary_expressions?;
 
 expression_list: expression (COMMA expression)*;
 
 // Prefix Expressions
 prefix_expression:
-	prefix_operator? postfix_expression
-	| in_out_expression;
-
-in_out_expression: AND identifier;
+	prefix_operator? postfix_expression;
 
 // Try Operator
 try_operator: TRY (QUESTION | BANG)?;
@@ -713,8 +614,9 @@ type_casting_operator: (IS | AS ( QUESTION | BANG)?) type;
 
 // Primary Expressions
 primary_expression:
-	unqualified_name generic_argument_clause?
-	| array_type
+	// unqualified_name generic_argument_clause?
+	// | 
+	array_type
 	| dictionary_type
 	| literal_expression
 	| self_expression
@@ -729,49 +631,13 @@ primary_expression:
 	| selector_expression
 	| key_path_string_expression;
 
-unqualified_name: identifier (LPAREN argument_names RPAREN)?;
-
-// Literal Expression
-literal_expression:
-	literal
-	| array_literal
-	| dictionary_literal
-	| playground_literal
-	| HASH_FILE
-	| HASH_FILE_ID
-	| HASH_FILE_PATH
-	| HASH_LINE
-	| HASH_COLUMN
-	| HASH_FUNCTION
-	| HASH_DSO_HANDLE;
-
-array_literal: LBRACK array_literal_items? RBRACK;
-
-array_literal_items:
-	array_literal_item (COMMA array_literal_item)* COMMA?;
-
-array_literal_item: expression;
-
-dictionary_literal:
-	LBRACK (dictionary_literal_items | COLON) RBRACK;
-
-dictionary_literal_items:
-	dictionary_literal_item (COMMA dictionary_literal_item)* COMMA?;
-
-dictionary_literal_item: expression COLON expression;
-
-playground_literal:
-	HASH_COLOR_LITERAL LPAREN RED COLON expression COMMA GREEN COLON expression COMMA BLUE COLON
-		expression COMMA ALPHA COLON expression RPAREN
-	| HASH_FILE_LITERAL LPAREN RESOURCE_NAME COLON expression RPAREN
-	| HASH_IMAGE_LITERAL LPAREN RESOURCE_NAME COLON expression RPAREN;
+// unqualified_name: identifier (LPAREN argument_names RPAREN)?;
 
 // Self Expression
 self_expression:
-	SELF												# self_pure_expression
-	| SELF DOT identifier								# self_method_expression
-	| SELF LBRACK function_call_argument_list RBRACK	# self_subscript_expression
-	| SELF DOT INIT										# self_initializer_expression;
+	SELF DOT identifier
+	| SELF LBRACK function_call_argument_list RBRACK
+	| SELF DOT INIT;
 
 // Superclass Expression
 superclass_expression:
@@ -929,8 +795,6 @@ labeled_trailing_closure: identifier COLON closure_expression;
 argument_names: argument_name+;
 argument_name: identifier COLON;
 
-// Types
-
 // The following sets of rules are mutually left-recursive [type, optional_type, implicitly_unwrapped_optional_type, metatype_type], to avoid this they were integrated into the same rule.
 type:
 	function_type
@@ -951,13 +815,13 @@ type:
 	| LPAREN type RPAREN;
 
 // Type Annotation
-type_annotation: COLON attributes? INOUT? type;
+type_annotation: COLON type;
 
 // Type identifier
 type_identifier:
 	type_name generic_argument_clause? (DOT type_identifier)?;
 
-type_name: identifier;
+type_name: (STRING_TYPE | identifier);
 
 // Tuple Type
 tuple_type: LPAREN tuple_type_element_list? RPAREN;
@@ -970,7 +834,7 @@ element_name:
 
 // Function Type
 function_type:
-	attributes? function_type_argument_clause THROWS? arrow_operator type;
+	function_type_argument_clause THROWS? arrow_operator type;
 
 function_type_argument_clause:
 	LPAREN (function_type_argument_list range_operator?)? RPAREN;
@@ -979,7 +843,7 @@ function_type_argument_list:
 	function_type_argument (COMMA function_type_argument)*;
 
 function_type_argument:
-	attributes? INOUT? type
+	INOUT? type
 	| argument_label type_annotation;
 
 argument_label:
@@ -1190,8 +1054,6 @@ keyword:
 // Operators
 
 // Assignment Operator
-assignment_operator: {SwiftSupport.isBinaryOp(_input)}? EQUAL;
-
 negate_prefix_operator: {SwiftSupport.isPrefixOp(_input)}? SUB;
 
 compilation_condition_AND:
@@ -1302,3 +1164,4 @@ interpolated_string_literal:
 			| tuple_element COMMA tuple_element_list
 		) RPAREN
 	)* Multi_line_string_close;
+ 

@@ -12,6 +12,12 @@ lexer grammar CadenceLexer;
 	}
 }
 
+ACCESS: 'access('('all'|SELF|'set')')';
+CONTRACT: 'contract';
+RESOURCE: 'resource';
+STRING_TYPE: 'String';
+UINT8_TYPE: 'UINT8';
+
 AS: 'as';
 ALPHA: 'alpha';
 BREAK: 'break';
@@ -27,7 +33,7 @@ ELSE: 'else';
 ENUM: 'enum';
 FOR: 'for';
 FALLTHROUGH: 'fallthrough';
-FUNC: 'func';
+FUNC: 'fun';
 IN: 'in';
 IF: 'if';
 IMPORT: 'import';
@@ -258,6 +264,9 @@ AT: '@';
 AND: '&';
 SUB: '-';
 EQUAL: '=';
+MOVE: '<-';
+FORCE_MOVE: '<-!';
+SWAP: '<->';
 OR: '|';
 DIV: '/';
 ADD: '+';
