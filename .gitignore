@@ -1,3 +1,4 @@
 .antlr
 node_modules
 .venv
+*.jar

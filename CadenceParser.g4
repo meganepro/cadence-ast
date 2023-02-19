@@ -583,8 +583,8 @@ balanced_token_punctuation:
 		| QUESTION
 	)
 	| arrow_operator
-	| {SwiftSupport.isPrefixOp(_input)}? AND
-	| {SwiftSupport.isPostfixOp(_input)}? BANG;
+	|  AND
+	|  BANG;
 
 // Expressions
 expression: prefix_expression binary_expressions?;
@@ -1054,25 +1054,25 @@ keyword:
 // Operators
 
 // Assignment Operator
-negate_prefix_operator: {SwiftSupport.isPrefixOp(_input)}? SUB;
+negate_prefix_operator:  SUB;
 
 compilation_condition_AND:
-	{SwiftSupport.isOperator(_input,"&&")}? AND AND;
+	 AND AND;
 compilation_condition_OR:
-	{SwiftSupport.isOperator(_input,"||")}? OR OR;
+	 OR OR;
 compilation_condition_GE:
-	{SwiftSupport.isOperator(_input,">=")}? GT EQUAL;
-compilation_condition_L: {SwiftSupport.isOperator(_input,"<")}? LT;
-arrow_operator: {SwiftSupport.isOperator(_input,"->")}? SUB GT;
-range_operator: {SwiftSupport.isOperator(_input,"...")}? DOT DOT DOT;
+	 GT EQUAL;
+compilation_condition_L:  LT;
+arrow_operator:  SUB GT;
+range_operator:  DOT DOT DOT;
 same_type_equals:
-	{SwiftSupport.isOperator(_input,"==")}? EQUAL EQUAL;
+	 EQUAL EQUAL;
 
-binary_operator: {SwiftSupport.isBinaryOp(_input)}? operator;
+binary_operator:  operator;
 
-prefix_operator: {SwiftSupport.isPrefixOp(_input)}? operator;
+prefix_operator:  operator;
 
-postfix_operator: {SwiftSupport.isPostfixOp(_input)}? operator;
+postfix_operator:  operator;
 
 operator:
 	operator_head operator_characters?

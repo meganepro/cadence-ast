@@ -1,16 +1,4 @@
 lexer grammar CadenceLexer;
-@lexer::header {
-	import java.util.Stack;
-}
-@lexer::members {
-	Stack<Integer> parenthesis = new Stack<Integer>();
-
-	@Override
-	public void reset(){
-		super.reset();
-		parenthesis.clear();
-	}
-}
 
 ACCESS: 'access('('all'|SELF|'set')')';
 CONTRACT: 'contract';
@@ -236,21 +224,10 @@ fragment Property_wrapper_projection: '$' Identifier_characters;
 
 DOT: '.';
 LCURLY: '{';
-LPAREN:
-	'(' { if(!parenthesis.isEmpty()) parenthesis.push(parenthesis.pop()+1);};
+LPAREN: '(' ;
 LBRACK: '[';
 RCURLY: '}';
-RPAREN:
-	')' { if(!parenthesis.isEmpty()) 
-		{
-			parenthesis.push(parenthesis.pop()-1); 
-			if(parenthesis.peek() == 0) 
-			{ 
-				parenthesis.pop();
-				popMode();
-			}
-		}
-		};
+RPAREN: ')';
 RBRACK: ']';
 COMMA: ',';
 COLON: ':';
