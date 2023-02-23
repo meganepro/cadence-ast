@@ -1,129 +1,51 @@
 lexer grammar CadenceLexer;
 
+channels {
+  COMMENTS
+}
+
 ACCESS: 'access('('all'|SELF|'set')')';
 CONTRACT: 'contract';
 RESOURCE: 'resource';
 STRING_TYPE: 'String';
 UINT8_TYPE: 'UINT8';
 
+WS: [ \n\r\t\u000B\u000C\u0000]+ -> channel(HIDDEN);
+
 AS: 'as';
-ALPHA: 'alpha';
 BREAK: 'break';
 CASE: 'case';
-CATCH: 'catch';
-CLASS: 'class';
 CONTINUE: 'continue';
 DEFAULT: 'default';
-DEFER: 'defer';
-DO: 'do';
-GUARD: 'guard';
 ELSE: 'else';
 ENUM: 'enum';
 FOR: 'for';
-FALLTHROUGH: 'fallthrough';
 FUNC: 'fun';
 IN: 'in';
 IF: 'if';
 IMPORT: 'import';
-INTERNAL: 'internal';
-FINAL: 'final';
-OPEN: 'open';
 PRIVATE: 'private';
 PUBLIC: 'public';
-WHERE: 'where';
 WHILE: 'while';
 LET: 'let';
 VAR: 'var';
-PROTOCOL: 'protocol';
 GET: 'get';
 SET: 'set';
-WILL_SET: 'willSet';
-DID_SET: 'didSet';
-REPEAT: 'repeat';
 SWITCH: 'switch';
 STRUCT: 'struct';
 RETURN: 'return';
 THROW: 'throw';
-THROWS: 'throws';
-RETHROWS: 'rethrows';
-INDIRECT: 'indirect';
 INIT: 'init';
-DEINIT: 'deinit';
-ASSOCIATED_TYPE: 'associatedtype';
-EXTENSION: 'extension';
-SUBSCRIPT: 'subscript';
-PREFIX: 'prefix';
-INFIX: 'infix';
-LEFT: 'left';
-RIGHT: 'right';
-NONE: 'none';
-PRECEDENCE_GROUP: 'precedencegroup';
-HIGHER_THAN: 'higherThan';
-LOWER_THAN: 'lowerThan';
-ASSIGNMENT: 'assignment';
-ASSOCIATIVITY: 'associativity';
-POSTFIX: 'postfix';
-OPERATOR: 'operator';
-TYPEALIAS: 'typealias';
-OS: 'os';
-ARCH: 'arch';
-SWIFT: 'swift';
-COMPILER: 'compiler';
-CAN_IMPORT: 'canImport';
-TARGET_ENVIRONMENT: 'targetEnvironment';
-CONVENIENCE: 'convenience';
-DYNAMIC: 'dynamic';
-LAZY: 'lazy';
-OPTIONAL: 'optional';
-OVERRIDE: 'override';
-REQUIRED: 'required';
 STATIC: 'static';
-WEAK: 'weak';
-UNOWNED: 'unowned';
-SAFE: 'safe';
-UNSAFE: 'unsafe';
-MUTATING: 'mutating';
-NONMUTATING: 'nonmutating';
-FILE_PRIVATE: 'fileprivate';
 IS: 'is';
 TRY: 'try';
 SUPER: 'super';
 ANY: 'Any';
 FALSE: 'false';
-RED: 'red';
-BLUE: 'blue';
-GREEN: 'green';
-RESOURCE_NAME: 'resourceName';
 TRUE: 'true';
 NIL: 'nil';
-INOUT: 'inout';
-SOME: 'some';
-TYPE: 'Type';
-PRECEDENCE: 'precedence';
 SELF: 'self';
-SELF_BIG: 'Self';
 
-MAC_OS: 'macOS';
-I_OS: 'iOS';
-OSX: 'OSX';
-WATCH_OS: 'watchOS';
-TV_OS: 'tvOS';
-LINUX: 'Linux';
-WINDOWS: 'Windows';
-
-I386: 'i386';
-X86_64: 'x86_64';
-ARM: 'arm';
-ARM64: 'arm64';
-
-SIMULATOR: 'simulator';
-MAC_CATALYST: 'macCatalyst';
-
-I_OS_APPLICATION_EXTENSION: 'iOSApplicationExtension';
-MAC_CATALYST_APPLICATION_EXTENSION:
-	'macCatalystApplicationExtension';
-MAC_OS_APPLICATION_EXTENSION: 'macOSApplicationExtension';
-SOURCE_LOCATION: '#sourceLocation';
 
 FILE: 'file';
 LINE: 'line';
@@ -131,90 +53,74 @@ ERROR: '#error';
 WARNING: '#warning';
 AVAILABLE: '#available';
 
-HASH_IF: '#if';
-HASH_ELSEIF: '#elseif';
-HASH_ELSE: '#else';
-HASH_ENDIF: '#endif';
-HASH_FILE: '#file';
-HASH_FILE_ID: '#fileID';
-HASH_FILE_PATH: '#filePath';
-HASH_LINE: '#line';
-HASH_COLUMN: '#column';
-HASH_FUNCTION: '#function';
-HASH_DSO_HANDLE: '#dsohandle';
-HASH_SELECTOR: '#selector';
-HASH_KEYPATH: '#keyPath';
-HASH_COLOR_LITERAL: '#colorLiteral';
-HASH_FILE_LITERAL: '#fileLiteral';
-HASH_IMAGE_LITERAL: '#imageLiteral';
-GETTER: 'getter';
-SETTER: 'setter';
-
 Identifier:
 	Identifier_head Identifier_characters?
-	| Implicit_parameter_name
-	| Property_wrapper_projection;
+	// | Implicit_parameter_name
+	// | Property_wrapper_projection
+	;
 
 fragment Identifier_head:
 	[a-zA-Z]
 	| '_'
-	| '\u00A8'
-	| '\u00AA'
-	| '\u00AD'
-	| '\u00AF'
-	| [\u00B2-\u00B5]
-	| [\u00B7-\u00BA]
-	| [\u00BC-\u00BE]
-	| [\u00C0-\u00D6]
-	| [\u00D8-\u00F6]
-	| [\u00F8-\u00FF]
-	| [\u0100-\u02FF]
-	| [\u0370-\u167F]
-	| [\u1681-\u180D]
-	| [\u180F-\u1DBF]
-	| [\u1E00-\u1FFF]
-	| [\u200B-\u200D]
-	| [\u202A-\u202E]
-	| [\u203F-\u2040]
-	| '\u2054'
-	| [\u2060-\u206F]
-	| [\u2070-\u20CF]
-	| [\u2100-\u218F]
-	| [\u2460-\u24FF]
-	| [\u2776-\u2793]
-	| [\u2C00-\u2DFF]
-	| [\u2E80-\u2FFF]
-	| [\u3004-\u3007]
-	| [\u3021-\u302F]
-	| [\u3031-\u303F]
-	| [\u3040-\uD7FF]
-	| [\uF900-\uFD3D]
-	| [\uFD40-\uFDCF]
-	| [\uFDF0-\uFE1F]
-	| [\uFE30-\uFE44]
-	| [\uFE47-\uFFFD]
-	| [\u{10000}-\u{1FFFD}]
-	| [\u{20000}-\u{2FFFD}]
-	| [\u{30000}-\u{3FFFD}]
-	| [\u{40000}-\u{4FFFD}]
-	| [\u{50000}-\u{5FFFD}]
-	| [\u{60000}-\u{6FFFD}]
-	| [\u{70000}-\u{7FFFD}]
-	| [\u{80000}-\u{8FFFD}]
-	| [\u{90000}-\u{9FFFD}]
-	| [\u{A0000}-\u{AFFFD}]
-	| [\u{B0000}-\u{BFFFD}]
-	| [\u{C0000}-\u{CFFFD}]
-	| [\u{D0000}-\u{DFFFD}]
-	| [\u{E0000}-\u{EFFFD}];
+	// | '\u00A8'
+	// | '\u00AA'
+	// | '\u00AD'
+	// | '\u00AF'
+	// | [\u00B2-\u00B5]
+	// | [\u00B7-\u00BA]
+	// | [\u00BC-\u00BE]
+	// | [\u00C0-\u00D6]
+	// | [\u00D8-\u00F6]
+	// | [\u00F8-\u00FF]
+	// | [\u0100-\u02FF]
+	// | [\u0370-\u167F]
+	// | [\u1681-\u180D]
+	// | [\u180F-\u1DBF]
+	// | [\u1E00-\u1FFF]
+	// | [\u200B-\u200D]
+	// | [\u202A-\u202E]
+	// | [\u203F-\u2040]
+	// | '\u2054'
+	// | [\u2060-\u206F]
+	// | [\u2070-\u20CF]
+	// | [\u2100-\u218F]
+	// | [\u2460-\u24FF]
+	// | [\u2776-\u2793]
+	// | [\u2C00-\u2DFF]
+	// | [\u2E80-\u2FFF]
+	// | [\u3004-\u3007]
+	// | [\u3021-\u302F]
+	// | [\u3031-\u303F]
+	// | [\u3040-\uD7FF]
+	// | [\uF900-\uFD3D]
+	// | [\uFD40-\uFDCF]
+	// | [\uFDF0-\uFE1F]
+	// | [\uFE30-\uFE44]
+	// | [\uFE47-\uFFFD]
+	// | [\u{10000}-\u{1FFFD}]
+	// | [\u{20000}-\u{2FFFD}]
+	// | [\u{30000}-\u{3FFFD}]
+	// | [\u{40000}-\u{4FFFD}]
+	// | [\u{50000}-\u{5FFFD}]
+	// | [\u{60000}-\u{6FFFD}]
+	// | [\u{70000}-\u{7FFFD}]
+	// | [\u{80000}-\u{8FFFD}]
+	// | [\u{90000}-\u{9FFFD}]
+	// | [\u{A0000}-\u{AFFFD}]
+	// | [\u{B0000}-\u{BFFFD}]
+	// | [\u{C0000}-\u{CFFFD}]
+	// | [\u{D0000}-\u{DFFFD}]
+	// | [\u{E0000}-\u{EFFFD}]
+	;
 
 fragment Identifier_character:
 	[0-9]
-	| [\u0300-\u036F]
-	| [\u1DC0-\u1DFF]
-	| [\u20D0-\u20FF]
-	| [\uFE20-\uFE2F]
-	| Identifier_head;
+	// | [\u0300-\u036F]
+	// | [\u1DC0-\u1DFF]
+	// | [\u20D0-\u20FF]
+	// | [\uFE20-\uFE2F]
+	| Identifier_head
+	;
 
 fragment Identifier_characters: Identifier_character+;
 
@@ -318,14 +224,10 @@ fragment Floating_point_e: [eE];
 fragment Floating_point_p: [pP];
 fragment Sign: [+-];
 
-WS: [ \n\r\t\u000B\u000C\u0000]+ -> channel(HIDDEN);
 
 HASHBANG: '#!' .*? [\r\n]+ -> channel(HIDDEN);
 
-Block_comment:
-	'/*' (Block_comment | .)*? '*/' -> channel(HIDDEN);
-
-Line_comment: '//' .*? ('\n' | EOF) -> channel(HIDDEN);
+Line_comment: '//' .*? ('\n' | EOF) -> channel(COMMENTS);
 
 Multi_line_extended_string_open:
 	'#'+ '"""' -> pushMode(MultiLineExtended);

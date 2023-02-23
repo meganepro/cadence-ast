@@ -1,10 +1,10 @@
 {
   "antlr4.generation": {
     "mode": "external",
-    "language": "ts",
+    "language": "JavaScript",
     "listeners": true,
     "visitors": false,
-    "alternativeJar": "antlr-4.9-complete.jar",
+    "alternativeJar": "antlr4-4.8-1-complete.jar",
     "outputDir": "parser"
   }
 }
