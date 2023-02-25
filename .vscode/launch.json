@@ -5,19 +5,10 @@
   "version": "1.0.0",
   "configurations": [
     {
-      "name": "[Swift]Debug ANTLR4 grammar",
-      "type": "antlr-debug",
-      "request": "launch",
-      "input": "SwiftInput.swift",
-      "grammar": "SwiftParser.g4",
-      "printParseTree": true,
-      "visualParseTree": true
-    },
-    {
       "name": "[Cadence]Debug ANTLR4 grammar",
       "type": "antlr-debug",
       "request": "launch",
-      "input": "input.cdc",
+      "input": "NonFungibleToken.cdc",
       "grammar": "CadenceParser.g4",
       "printParseTree": true,
       "visualParseTree": true
