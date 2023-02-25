@@ -6,9 +6,33 @@ channels {
 
 ACCESS: 'access('('all'|SELF|'set')')';
 CONTRACT: 'contract';
+EVENT: 'event';
+INTERFACE: 'interface';
 RESOURCE: 'resource';
+// type
 STRING_TYPE: 'String';
-UINT8_TYPE: 'UINT8';
+UINT8_TYPE: 'UInt8';
+UINT64_TYPE: 'UInt64';
+ADDRESS: 'Address';
+TYPE: 'Type';
+ANY_STRUCT: 'AnyStruct';
+QUESTION: '?';
+AT: '@';
+AND: '&';
+// phase
+PREPARE: 'prepare';
+PRE: 'pre';
+EXECUTE: 'execute';
+POST: 'post';
+TRANSACTION: 'transaction';
+
+Line_comment: '//' .*? ('\n' | EOF) -> channel(COMMENTS);
+Block_comment:
+	'/*' (Block_comment | .)*? '*/' -> channel(COMMENTS);
+
+////////////////////////////////////////////
+// un checked
+////////////////////////////////////////////
 
 WS: [ \n\r\t\u000B\u000C\u0000]+ -> channel(HIDDEN);
 
@@ -25,7 +49,7 @@ IN: 'in';
 IF: 'if';
 IMPORT: 'import';
 PRIVATE: 'private';
-PUBLIC: 'public';
+PUBLIC: 'pub';
 WHILE: 'while';
 LET: 'let';
 VAR: 'var';
@@ -142,9 +166,6 @@ LT: '<';
 GT: '>';
 UNDERSCORE: '_';
 BANG: '!';
-QUESTION: '?';
-AT: '@';
-AND: '&';
 SUB: '-';
 EQUAL: '=';
 MOVE: '<-';
@@ -227,7 +248,7 @@ fragment Sign: [+-];
 
 HASHBANG: '#!' .*? [\r\n]+ -> channel(HIDDEN);
 
-Line_comment: '//' .*? ('\n' | EOF) -> channel(COMMENTS);
+
 
 Multi_line_extended_string_open:
 	'#'+ '"""' -> pushMode(MultiLineExtended);

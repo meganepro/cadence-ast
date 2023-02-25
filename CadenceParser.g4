@@ -12,7 +12,7 @@ top_level: statements? EOF;
 // Generic Parameter Clause
 generic_parameter_clause: LT generic_parameter_list GT;
 generic_parameter_list: generic_parameter (COMMA generic_parameter)*;
-generic_parameter: type_name ( COLON type )?;
+generic_parameter: type_name ( type_annotation )?;
 // Generic Argument Clause
 generic_argument_clause: LT generic_argument_list GT;
 generic_argument_list:
@@ -21,7 +21,8 @@ generic_argument: type;
 // Parameter Clause
 parameter_clause: LPAREN parameter_list? RPAREN;
 parameter_list: parameter (COMMA parameter)*;
-parameter: type_name ( COLON type )?;
+parameter: parameter_name ( type_annotation )?;
+parameter_name: type_name_alias? type_name;
 
 negate_prefix_operator: SUB;
 
@@ -138,10 +139,15 @@ primary_expression:
 
 // Self Expression
 self_expression:
-	SELF DOT identifier
+	SELF DOT object_expression
 	// | SELF LBRACK function_call_argument_list RBRACK
 	// | SELF DOT INIT
 	;
+object_expression:
+	variable_name (parameter_clause | object_access)*
+	(DOT variable_name (parameter_clause | object_access)*)*
+	;
+object_access: LBRACK (identifier | literal_expression) RBRACK;
 
 // // Superclass Expression
 // superclass_expression:
@@ -169,9 +175,22 @@ dictionary_literal_item: expression COLON expression;
 // Operator
 ////////////////////////////////////////////
 assignment_operator: (EQUAL | MOVE | FORCE_MOVE | SWAP);
+compilation_condition:
+	compilation_condition_AND
+	| compilation_condition_OR
+	| compilation_condition_NOT
+	| compilation_condition_ET
+	| compilation_condition_GE
+	| compilation_condition_LE
+	| compilation_condition_G
+	| compilation_condition_L;
 compilation_condition_AND: AND AND;
 compilation_condition_OR: OR OR;
+compilation_condition_NOT: BANG EQUAL;
+compilation_condition_ET: EQUAL EQUAL;
 compilation_condition_GE: GT EQUAL;
+compilation_condition_LE: LT EQUAL;
+compilation_condition_G:  GT;
 compilation_condition_L:  LT;
 arrow_operator:  SUB GT;
 range_operator:  DOT DOT DOT;
@@ -215,11 +234,16 @@ dot_operator_characters: (
 ////////////////////////////////////////////
 declaration:
 	contract_declaration
-		// import_declaration
+		| resource_interface_declaration
+		| resource_implementation_declaration
+		| struct_interface_declaration
+		| struct_implementation_declaration
 		| constant_declaration
-		// | variable_declaration
+		| variable_declaration
+		| event_declaration
 		// | typealias_declaration
 		| function_declaration
+		| phase_declaration
 		// | enum_declaration
 		// | struct_declaration
 		// | class_declaration
@@ -234,8 +258,16 @@ declaration:
 
 // Contract Declaratioin
 contract_declaration:
-	access_level_modifier CONTRACT identifier code_block;
-// contract_name: identifier;
+	access_level_modifier CONTRACT INTERFACE? identifier code_block;
+resource_interface_declaration:
+	access_level_modifier RESOURCE INTERFACE identifier code_block;
+resource_implementation_declaration:
+	access_level_modifier RESOURCE resource_implementation_definition code_block;
+resource_implementation_definition: identifier composite_types;
+struct_interface_declaration:
+	access_level_modifier STRUCT INTERFACE identifier code_block;
+struct_implementation_declaration:
+	access_level_modifier STRUCT identifier composite_types code_block;
 // Constant Declaration
 constant_declaration:
 	declaration_modifiers? LET pattern_initializer_list;
@@ -244,12 +276,26 @@ function_declaration:
 	function_head function_name generic_parameter_clause?
 	function_signature
 		function_body?;
+// Phase Declaration
+phase_declaration:
+	(pre_phase_head
+		| execute_phase_head
+		| post_phase_head
+		| transaction_phase_head
+		| prepare_phase_head)
+	function_body?;
+pre_phase_head: PRE;
+execute_phase_head: EXECUTE;
+post_phase_head: POST;
+transaction_phase_head: TRANSACTION function_signature;
+prepare_phase_head: PREPARE function_signature;
 // Variable Declaration
-variable_declaration:
-	variable_declaration_head (
-		variable_name (COLON type)?
-	);
+variable_declaration: variable_declaration_head variable_body;
 variable_declaration_head: access_level_modifier ( LET | VAR );
+variable_body: variable_name (type_annotation)?;
+event_declaration: event_declaration_head event_body;
+event_declaration_head: access_level_modifier ( EVENT );
+event_body: variable_name parameter_clause;
 
 // Declaration Modifiers
 declaration_modifier:
@@ -314,6 +360,7 @@ statement:
 		declaration
 		// | loop_statement
 		| assignment_statement
+		| check_statement
 		// | branch_statement
 		// | labeled_statement
 		| control_transfer_statement
@@ -327,6 +374,11 @@ assignment_statement:
 	(variable | variable_declaration)
 	assignment_operator
 	(variable | literal_expression);
+check_statement: check_statement_conditions check_statement_message?;
+check_statement_conditions:
+	(variable | variable_declaration)
+		(compilation_condition (variable | literal_expression))*;
+check_statement_message: COLON string_literal;
 // Control Transfer Statements
 control_transfer_statement:
 	break_statement
@@ -340,9 +392,9 @@ control_transfer_statement:
 // Variable
 ////////////////////////////////////////////
 variable: (resource_variable | local_variable);
-resource_variable: self_expression;
+resource_variable: self_expression | object_expression;
 local_variable: variable_name;
-variable_name: identifier;
+variable_name: (identifier | literal_expression) (BANG | QUESTION)?;
 
 ////////////////////////////////////////////
 // Identifier
@@ -420,13 +472,18 @@ function_type:
 // Array Type
 array_type: LBRACK type RBRACK;
 // Dictionary Type
-dictionary_type: LBRACK type COLON type RBRACK;
+dictionary_type: AT? LCURLY type type_annotation (COMMA type type_annotation)* RCURLY;
 // Type Annotation
 type_annotation: COLON type;
 // Type identifier
 type_identifier:
-	type_name generic_argument_clause? (DOT type_identifier)?;
-type_name: (STRING_TYPE | identifier);
+	(AT | AND)? type_name QUESTION? generic_argument_clause? (DOT type_identifier)?;
+type_name: (STRING_TYPE | UINT64_TYPE | ADDRESS | TYPE | ANY_STRUCT | identifier);
+type_name_alias: identifier;
+// Composit Types
+composite_types: COLON type (COMMA type)*;
+
+
 // Any Type
 any_type: ANY;
 
