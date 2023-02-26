@@ -258,16 +258,16 @@ declaration:
 
 // Contract Declaratioin
 contract_declaration:
-	access_level_modifier CONTRACT INTERFACE? identifier code_block;
+	access_level_modifier CONTRACT INTERFACE? identifier class_block;
 resource_interface_declaration:
-	access_level_modifier RESOURCE INTERFACE identifier code_block;
+	access_level_modifier RESOURCE INTERFACE identifier class_block;
 resource_implementation_declaration:
-	access_level_modifier RESOURCE resource_implementation_definition code_block;
+	access_level_modifier RESOURCE resource_implementation_definition class_block;
 resource_implementation_definition: identifier composite_types;
 struct_interface_declaration:
-	access_level_modifier STRUCT INTERFACE identifier code_block;
+	access_level_modifier STRUCT INTERFACE identifier class_block;
 struct_implementation_declaration:
-	access_level_modifier STRUCT identifier composite_types code_block;
+	access_level_modifier STRUCT identifier composite_types class_block;
 // Constant Declaration
 constant_declaration:
 	declaration_modifiers? LET pattern_initializer_list;
@@ -322,6 +322,7 @@ declarations: declaration+;
 
 // Code Blocks
 code_block: LCURLY statements? RCURLY;
+class_block: LCURLY statements? RCURLY;
 
 ////////////////////////////////////////////
 // Function
